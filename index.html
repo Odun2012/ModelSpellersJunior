@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Bee Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .quiz-container {
+            width: 50%;
+            margin: auto;
+            padding: 20px;
+            background: #cbd8df;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .hidden {
+            display: none;
+        }
+        .answer-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #timer {
+            font-weight: bolder;
+            background-color: rgb(32, 32, 31);
+            color: white;
+            padding: 10px 20px;
+            width: 20%;
+            display: inline-block;
+        }
+        .correct-answer {
+            color: green;
+            font-weight: bold;
+        }
+        .incorrect-answer {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #score {
+            background-color: aqua;
+            border-color: black;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        input {
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h2>Model Spellers' Club (Junior Category)</h2>
+        <p id="question-number"></p>
+        <p id="definition"></p>
+        <p id="partOfSpeech"></p>
+        <p id="timer">Time left: <span id="timer">25</span> seconds</p>
+        <input type="text" id="userAnswer" placeholder="Enter the word">
+        <button onclick="nextWord()" id="nextBtn">Next</button>
+        <button onclick="submitQuiz()" id="submitBtn" class="hidden">Submit</button>
+        <div class="answer-container hidden" id="results"></div>
+        <p id="score" class="hidden"></p>
+        <button onclick="retakeQuiz()" class="hidden" id="retakeBtn">Retake Quiz</button>
+        <button onclick="endQuiz()" class="hidden" id="endQuizBtn">End Quiz</button>
+    </div>
+
+    <script>
+        let words = [
+        { word: "CHIMERICAL", meaning: "Fanciful; whimsical; playful", partOfSpeech: "Adjective" },
+            { word: "ABDICATION", meaning: "Failure to fulfil a responsibility or duty", partOfSpeech: "Noun" },
+            { word: "ABLUTION", meaning: "Act of cleansing", partOfSpeech: "Noun" },
+            { word: "ABNEGATE", meaning: "To deny; renounce", partOfSpeech: "Verb" },
+            { word: "ABORTIVE", meaning: "Failing to accomplish an intended aim or purpose", partOfSpeech: "Adjective" },
+            { word: "DEFERENCE", meaning: "Respect due a superior or elder", partOfSpeech: "Noun" },
+            { word: "INKLING", meaning: "A hint", partOfSpeech: "Noun" },
+            { word: "INFALLIBLE", meaning: "Free from error; absolutely dependable", partOfSpeech: "Adjective" },
+            { word: "INCORRUPTIBLE", meaning: "That cannot be persuaded to do something dishonest", partOfSpeech: "Adjective" },
+            { word: "INDICTMENT", meaning: "A formal charge or accusation of a serious crime", partOfSpeech: "Noun" },
+            { word: "MALAPROPISM", meaning: "An act or habit of misusing words ridiculously", partOfSpeech: "Noun" },
+            { word: "PECCADILLO", meaning: "A small breach of propriety or principle", partOfSpeech: "Noun" },
+            { word: "PECUNIARY", meaning: "Relating to or consisting of money", partOfSpeech: "Adjective" },
+            { word: "PEDAGOGUE", meaning: "A teacher of children", partOfSpeech: "Noun" },
+            { word: "CRUSTACEAN", meaning: "One of a class of arthropods having crust-like shells", partOfSpeech: "Noun" },
+            { word: "CRUSTACEOUS", meaning: "Having a crust-like shell", partOfSpeech: "Adjective" },
+            { word: "CRYPT", meaning: "A slender pit or recess", partOfSpeech: "Noun" },
+            { word: "CRYPTOGRAM", meaning: "Anything written in secret characters", partOfSpeech: "Noun" },
+            { word: "CULVERT", meaning: "An artificial covered channel for water", partOfSpeech: "Noun" },
+            { word: "CYGNET", meaning: "A young swan", partOfSpeech: "Noun" },
+            { word: "DEBILITATE", meaning: "To make weak or feeble", partOfSpeech: "Verb" },
+            { word: "DEBUTANTE", meaning: "Young woman entering society", partOfSpeech: "Noun" },
+            { word: "DECEIT", meaning: "Concealment or distortion of truth", partOfSpeech: "Noun" },
+            { word: "DECODE", meaning: "To discover the underlying meaning", partOfSpeech: "Verb" },
+            { word: "DECORUM", meaning: "Proper behaviour and orderliness", partOfSpeech: "Noun" }
+        ];
+        
+        let currentWordIndex = 0;
+        let userAnswers = [];
+        let timer;
+        
+        function startTimer() {
+            let timeLeft = 25;
+            document.getElementById("timer").textContent = timeLeft;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById("timer").textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    nextWord();
+                }
+            }, 1000);
+        }
+
+        function loadWord() {
+            if (currentWordIndex < words.length) {
+                document.getElementById("question-number").textContent = `Question ${currentWordIndex + 1}`;
+                document.getElementById("definition").textContent = `Meaning: ${words[currentWordIndex].meaning}`;
+                document.getElementById("partOfSpeech").textContent = `Part of Speech: ${words[currentWordIndex].partOfSpeech}`;
+                document.getElementById("userAnswer").value = "";
+                clearInterval(timer);
+                startTimer();
+            } else {
+                document.getElementById("nextBtn").classList.add("hidden");
+                document.getElementById("submitBtn").classList.remove("hidden");
+                clearInterval(timer);
+            }
+        }
+
+        function nextWord() {
+            userAnswers.push(document.getElementById("userAnswer").value.trim());
+            currentWordIndex++;
+            loadWord();
+        }
+
+        function submitQuiz() {
+            let resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "<h3>Results</h3>";
+            let score = 0;
+
+            words.forEach((word, index) => {
+                let isCorrect = userAnswers[index]?.toUpperCase() === word.word;
+                if (isCorrect) score++;
+                resultsDiv.innerHTML += `<p>${index + 1}. ${word.meaning} - Your Answer: <span class="${isCorrect ? 'correct-answer' : 'incorrect-answer'}">${userAnswers[index] || ""}</span> | Correct Answer: <span class="correct-answer">${word.word}</span></p>`;
+            });
+
+            document.getElementById("score").textContent = `Total Score: ${score} / 25`;
+            document.getElementById("score").classList.remove("hidden");
+            resultsDiv.classList.remove("hidden");
+            document.getElementById("retakeBtn").classList.remove("hidden");
+            document.getElementById("endQuizBtn").classList.remove("hidden");
+        }
+
+        function retakeQuiz() {
+            words = words.sort(() => Math.random() - 0.5);
+            currentWordIndex = 0;
+            userAnswers = [];
+            document.getElementById("results").classList.add("hidden");
+            document.getElementById("score").classList.add("hidden");
+            document.getElementById("retakeBtn").classList.add("hidden");
+            document.getElementById("endQuizBtn").classList.add("hidden");
+            document.getElementById("submitBtn").classList.add("hidden");
+            document.getElementById("nextBtn").classList.remove("hidden");
+            loadWord();
+        }
+
+        function endQuiz() {
+            alert("Thank you for playing the Spelling Bee Quiz!");
+            location.reload();
+        }
+
+        loadWord();
+    </script>
+</body>
+</html>
